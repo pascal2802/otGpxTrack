@@ -50,4 +50,5 @@ def test_gpxtrack_openturns_sample():
     track = GpxTrack(gpx_file)
     sample = track.get_openturns_sample()
     assert sample.getSize() > 0
-    assert sample.getDimension() == 4  # latitude, longitude, elevation, time
+    assert sample.getDimension() == 5  # latitude, longitude, elevation, time, speed
+    assert sample.getDescription() == ["Latitude", "Longitude", "Elevation", "Time", "Speed"]

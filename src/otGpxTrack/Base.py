@@ -52,16 +52,28 @@ class GpxTrack:
         longitudes = []
         elevations = []
         times = []
+        speeds = []
         
-        for point in self.points:
+        for i, point in enumerate(self.points):
             latitudes.append(point.latitude)
             longitudes.append(point.longitude)
             elevations.append(point.elevation if point.elevation is not None else 0.0)
             times.append(point.time.timestamp() if point.time is not None else 0.0)
+            
+            # Calculate instantaneous speed
+            if i > 0:
+                prev_point = self.points[i-1]
+                distance = point.distance_3d(prev_point)
+                time_diff = (point.time - prev_point.time).total_seconds()
+                speed = distance / time_diff if time_diff > 0 else 0.0
+            else:
+                speed = 0.0
+            speeds.append(speed)
         
         # Create OpenTURNS sample
-        data = np.column_stack([latitudes, longitudes, elevations, times])
+        data = np.column_stack([latitudes, longitudes, elevations, times, speeds])
         self.data = ot.Sample(data)
+        self.data.setDescription(["Latitude", "Longitude", "Elevation", "Time", "Speed"])
     
     def get_distance(self):
         """
