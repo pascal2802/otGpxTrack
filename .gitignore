@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+uv.lock
+.python-version
+*.pkl
+
+# Virtual environments
+.venv
+.vscode
+
+
+# Directories
+*build*
+*_generated*
+*execution_time*
+*auto_example*
+*DRAFT*
