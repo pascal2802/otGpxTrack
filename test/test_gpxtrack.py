@@ -3,6 +3,8 @@ Test module for GpxTrack class.
 """
 import pytest
 import os
+import numpy as np
+import openturns as ot
 from otGpxTrack.Base import GpxTrack
 
 
@@ -52,3 +54,44 @@ def test_gpxtrack_openturns_sample():
     assert sample.getSize() > 0
     assert sample.getDimension() == 5  # latitude, longitude, elevation, time, speed
     assert sample.getDescription() == ["Latitude", "Longitude", "Elevation", "Time", "Speed"]
+
+
+def test_gpxtrack_ar1_simulation():
+    """Test the AR-1 speed simulation of GpxTrack."""
+    gpx_file = get_test_file_path("activity_19218242997.gpx")
+    track = GpxTrack(gpx_file)
+    
+    # Test with a small segment
+    segment_indices = (0, min(10, len(track.points)-1))
+    mean_speed, lower, upper, speeds = track.simulate_ar1_speeds(segment_indices, n_sims=100)
+    
+    assert mean_speed >= 0
+    assert lower <= mean_speed <= upper
+    assert speeds.getSize() == 100
+    assert isinstance(speeds, ot.Sample)
+
+
+def test_gpxtrack_best_segment():
+    """Test the best segment finding for a target distance."""
+    gpx_file = get_test_file_path("activity_19218242997.gpx")
+    track = GpxTrack(gpx_file)
+    
+    # Test with a reasonable target distance
+    start_idx, end_idx, speed = track.get_best_segment_for_distance(500)
+    
+    assert start_idx < end_idx
+    assert end_idx < len(track.points)
+    assert speed >= 0
+
+
+def test_gpxtrack_best_segment_for_time():
+    """Test the best segment finding for a target time."""
+    gpx_file = get_test_file_path("activity_19218242997.gpx")
+    track = GpxTrack(gpx_file)
+    
+    # Test with a reasonable target time (10 seconds)
+    start_idx, end_idx, speed = track.get_best_segment_for_time(10.0)
+    
+    assert start_idx < end_idx
+    assert end_idx < len(track.points)
+    assert speed >= 0

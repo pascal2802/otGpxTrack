@@ -6,6 +6,30 @@ import numpy as np
 import openturns as ot
 
 
+def generate_ar1_error(n_points, sigma_tot=2.5, phi=0.9):
+    """
+    Generate correlated error drift (AR-1 process) using OpenTURNS.
+    
+    Args:
+        n_points (int): Number of points.
+        sigma_tot (float): Total standard deviation.
+        phi (float): Autoregressive coefficient.
+        
+    Returns:
+        ot.Sample: Sample of errors.
+    """
+    sigma_w = sigma_tot * (1 - phi**2)**0.5
+    errors = ot.Sample(n_points, 1)
+    errors[0] = ot.Point([0.0])
+    
+    normal_dist = ot.Normal(0.0, sigma_w)
+    for t in range(1, n_points):
+        error = phi * errors[t-1][0] + normal_dist.getRealization()[0]
+        errors[t] = ot.Point([error])
+    
+    return errors
+
+
 class GpxTrack:
     """
     A class to represent and analyze a GPX track using OpenTURNS.
@@ -121,3 +145,130 @@ class GpxTrack:
             ot.Sample: OpenTURNS sample.
         """
         return self.data
+    
+    def simulate_ar1_speeds(self, segment_indices, sigma_tot=2.5, phi=0.9, n_sims=1000):
+        """
+        Simulate speeds using AR-1 model for a segment of the track.
+        
+        Args:
+            segment_indices (tuple): Start and end indices of the segment.
+            sigma_tot (float): Total standard deviation for AR-1 process.
+            phi (float): Autoregressive coefficient.
+            n_sims (int): Number of simulations.
+            
+        Returns:
+            tuple: Mean speed, lower percentile, upper percentile, OpenTURNS sample of all simulated speeds.
+        """
+        start_idx, end_idx = segment_indices
+        segment_points = self.points[start_idx:end_idx+1]
+        n_pts = len(segment_points)
+        
+        if n_pts < 2:
+            return 0, 0, 0, ot.Sample()
+        
+        # Convert latitude and longitude to meters
+        lat_to_m = 111111
+        lon_to_m = 111111 * np.cos(np.radians(segment_points[0].latitude))
+        
+        # Extract coordinates and time using OpenTURNS
+        x_ref_data = [(p.longitude - segment_points[0].longitude) * lon_to_m for p in segment_points]
+        y_ref_data = [(p.latitude - segment_points[0].latitude) * lat_to_m for p in segment_points]
+        t_ref_data = [(p.time - segment_points[0].time).total_seconds() for p in segment_points]
+        
+        x_ref = ot.Sample(n_pts, 1)
+        y_ref = ot.Sample(n_pts, 1)
+        t_ref = ot.Sample(n_pts, 1)
+        
+        for i in range(n_pts):
+            x_ref[i] = ot.Point([x_ref_data[i]])
+            y_ref[i] = ot.Point([y_ref_data[i]])
+            t_ref[i] = ot.Point([t_ref_data[i]])
+        
+        dt_total = t_ref[-1][0] - t_ref[0][0]
+        
+        # Simulate speeds using OpenTURNS
+        v_simulees = ot.Sample(n_sims, 1)
+        for i in range(n_sims):
+            err_x = generate_ar1_error(n_pts, sigma_tot, phi)
+            err_y = generate_ar1_error(n_pts, sigma_tot, phi)
+            
+            # Calculate cumulative distance of noisy wake
+            dist_sim = 0.0
+            for j in range(1, n_pts):
+                dx = (x_ref[j][0] + err_x[j][0]) - (x_ref[j-1][0] + err_x[j-1][0])
+                dy = (y_ref[j][0] + err_y[j][0]) - (y_ref[j-1][0] + err_y[j-1][0])
+                dist_sim += (dx**2 + dy**2)**0.5
+            
+            speed = (dist_sim / dt_total) * 1.94384  # Convert to knots
+            v_simulees[i] = ot.Point([speed])
+        
+        # Calculate statistics using OpenTURNS
+        mean_speed = v_simulees.computeMean()[0]
+        lower = ot.Sample.computeQuantilePerComponent(v_simulees, 0.025)[0]
+        upper = ot.Sample.computeQuantilePerComponent(v_simulees, 0.975)[0]
+        
+        return mean_speed, lower, upper, v_simulees
+    
+    def _find_best_segment(self, target_value, is_distance=True):
+        """
+        Generic method to find the best segment of the track.
+        
+        Args:
+            target_value (float): Target value (distance in meters or time in seconds).
+            is_distance (bool): True for distance-based search, False for time-based search.
+            
+        Returns:
+            tuple: Start index, end index, observed speed.
+        """
+        best_v_obs = 0
+        best_indices = (0, 0)
+        
+        # Calculate cumulative values
+        cum_values = [0.0]
+        for i in range(1, len(self.points)):
+            if is_distance:
+                cum_values.append(cum_values[i-1] + self.points[i].distance_3d(self.points[i-1]))
+            else:
+                cum_values.append(cum_values[i-1] + (self.points[i].time - self.points[i-1].time).total_seconds())
+        
+        # Find best segment
+        for i in range(len(self.points)):
+            v_start = cum_values[i]
+            for j in range(i+1, len(self.points)):
+                if cum_values[j] - v_start >= target_value:
+                    dt = (self.points[j].time - self.points[i].time).total_seconds()
+                    if dt > 0:
+                        if is_distance:
+                            v = (target_value / dt) * 1.94384  # Convert to knots
+                        else:
+                            v = (self.points[j].distance_3d(self.points[i]) / target_value) * 1.94384  # Convert to knots
+                        if v > best_v_obs:
+                            best_v_obs = v
+                            best_indices = (i, j)
+                    break
+        
+        return best_indices[0], best_indices[1], best_v_obs
+    
+    def get_best_segment_for_distance(self, target_distance):
+        """
+        Find the best segment of the track for a given target distance.
+        
+        Args:
+            target_distance (float): Target distance in meters.
+            
+        Returns:
+            tuple: Start index, end index, observed speed.
+        """
+        return self._find_best_segment(target_distance, is_distance=True)
+    
+    def get_best_segment_for_time(self, target_time):
+        """
+        Find the best segment of the track for a given target time.
+        
+        Args:
+            target_time (float): Target time in seconds.
+            
+        Returns:
+            tuple: Start index, end index, observed speed.
+        """
+        return self._find_best_segment(target_time, is_distance=False)
