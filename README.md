@@ -61,6 +61,21 @@ print(f"Mean speed: {mean_speed:.2f} knots")
 print(f"95% CI: [{lower:.2f}, {upper:.2f}]")
 ```
 
+### Stochastic Process Generation
+
+```python
+# Generate stochastic process realizations for instantaneous speeds
+process_sample = track.processSample(sample_size=1000, method='ar1')
+
+print(f"Process sample size: {process_sample.getSize()}")
+print(f"Process dimension: {process_sample.getDimension()}")
+print(f"Time grid vertices: {process_sample.getMesh().getVerticesNumber()}")
+
+# Compute quantiles for confidence intervals
+quantiles = process_sample.computeQuantilePerComponent([0.025, 0.975])
+print(f"95% CI at first point: [{quantiles[0][0][0]:.2f}, {quantiles[1][0][0]:.2f}] knots")
+```
+
 ### Best Segment Analysis
 
 ```python

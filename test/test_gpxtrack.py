@@ -113,3 +113,35 @@ def test_gpxtrack_plot():
         
         # Close the figure to free memory
         plt.close(fig)
+
+
+def test_gpxtrack_process_sample():
+    """Test the processSample method for generating stochastic process realizations."""
+    gpx_file = get_test_file_path("activity_19218242997.gpx")
+    track = GpxTrack(gpx_file)
+    
+    # Test with default parameters
+    process_sample = track.processSample(sample_size=100, method='ar1')
+    
+    # Verify the output is a ProcessSample
+    assert isinstance(process_sample, ot.ProcessSample)
+    
+    # Verify the dimensions
+    assert process_sample.getSize() == 100  # Number of realizations
+    assert process_sample.getDimension() == 1  # Dimension of the process (speed)
+    
+    # Verify the time grid
+    time_grid = process_sample.getTimeGrid()
+    assert time_grid.getN() == len(track.points)  # Should match number of track points
+    
+    # Test with custom parameters
+    process_sample_custom = track.processSample(sample_size=50, method='ar1', sigma_tot=1.5, phi=0.7)
+    assert process_sample_custom.getSize() == 50
+    
+    # Test error handling for unsupported method
+    with pytest.raises(ValueError):
+        track.processSample(method='unsupported')
+    return process_sample
+
+if __name__=='__main__':
+    ps = test_gpxtrack_process_sample()

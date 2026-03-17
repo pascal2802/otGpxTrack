@@ -24,6 +24,7 @@ pythonpath = ["src"]
 
 [dependency-groups]
 dev = [
+    "notebook>=7.5.5",
     "numpydoc>=1.10.0",
     "pytest>=9.0.2",
     "sphinx-gallery>=0.20.0",
