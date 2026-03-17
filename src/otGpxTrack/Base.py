@@ -4,6 +4,7 @@ Base module for GpxTrack class.
 import gpxpy
 import numpy as np
 import openturns as ot
+import matplotlib.pyplot as plt
 
 
 def generate_ar1_error(n_points, sigma_tot=2.5, phi=0.9):
@@ -272,3 +273,61 @@ class GpxTrack:
             tuple: Start index, end index, observed speed.
         """
         return self._find_best_segment(target_time, is_distance=False)
+    
+    def plot_track(self, figsize=(10, 8), title="GPX Track", save_path=None, speed_unit="m/s"):
+        """
+        Plot the GPX track with points colored by speed using a jet colormap.
+        
+        Args:
+            figsize (tuple): Figure size (width, height).
+            title (str): Plot title.
+            save_path (str): Optional path to save the plot.
+            speed_unit (str): Unit for speed display ('m/s', 'km/h', or 'knots').
+            
+        Returns:
+            matplotlib.figure.Figure: The created figure.
+        """
+        if not self.points:
+            raise ValueError("No points to plot.")
+        
+        # Extract coordinates and speeds
+        longitudes = [point.longitude for point in self.points]
+        latitudes = [point.latitude for point in self.points]
+        speeds = [point.speed if hasattr(point, 'speed') else 0.0 for point in self.points]
+        
+        # Use speeds from OpenTURNS sample if available
+        if self.data is not None and self.data.getDimension() >= 5:
+            speeds = [self.data[i][4] for i in range(self.data.getSize())]
+        
+        # Convert speeds to desired unit
+        if speed_unit == "km/h":
+            speeds = [s * 3.6 for s in speeds]
+            unit_label = "Speed (km/h)"
+        elif speed_unit == "knots":
+            speeds = [s * 1.94384 for s in speeds]
+            unit_label = "Speed (knots)"
+        else:  # m/s
+            unit_label = "Speed (m/s)"
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Plot points colored by speed
+        scatter = ax.scatter(longitudes, latitudes, c=speeds, cmap='jet', s=10, alpha=0.7)
+        
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=ax)
+        cbar.set_label(unit_label)
+        
+        # Set plot properties
+        ax.set_title(title)
+        ax.set_xlabel('Longitude')
+        ax.set_ylabel('Latitude')
+        ax.grid(True, alpha=0.3)
+        ax.set_aspect('equal')
+        
+        # Save if path provided
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig

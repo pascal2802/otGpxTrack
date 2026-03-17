@@ -5,6 +5,7 @@ import pytest
 import os
 import numpy as np
 import openturns as ot
+import matplotlib.pyplot as plt
 from otGpxTrack.Base import GpxTrack
 
 
@@ -95,3 +96,20 @@ def test_gpxtrack_best_segment_for_time():
     assert start_idx < end_idx
     assert end_idx < len(track.points)
     assert speed >= 0
+
+
+def test_gpxtrack_plot():
+    """Test the track plotting functionality."""
+    gpx_file = get_test_file_path("activity_19218242997.gpx")
+    track = GpxTrack(gpx_file)
+    
+    # Test plotting with different speed units
+    for unit in ["m/s", "km/h", "knots"]:
+        fig = track.plot_track(title="Test Track", figsize=(8, 6), speed_unit=unit)
+        
+        assert fig is not None
+        assert len(fig.axes) == 2  # Main plot + colorbar
+        assert fig.axes[0].get_title() == "Test Track"
+        
+        # Close the figure to free memory
+        plt.close(fig)
