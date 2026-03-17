@@ -21,3 +21,9 @@ packages = ["src/otGpxTrack"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "numpydoc>=1.10.0",
+    "sphinx-gallery>=0.20.0",
+]
