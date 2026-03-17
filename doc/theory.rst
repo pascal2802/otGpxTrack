@@ -2,7 +2,7 @@ AR-1 Process Theory
 =====================
 
 Autoregressive model of order 1 (AR‑1)
--------------------------------------
+--------------------------------------
 
 An AR‑1 process :math:`X_t` satisfies
 
