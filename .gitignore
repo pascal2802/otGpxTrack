@@ -13,6 +13,10 @@ uv.lock
 .venv
 .vscode
 
+# Vim swap files
+*.swp
+*.swo
+*.swp
 
 # Directories
 *build*
@@ -20,3 +24,6 @@ uv.lock
 *execution_time*
 *auto_example*
 *DRAFT*
+
+# Mistral memory file
+MistralMemory.md
