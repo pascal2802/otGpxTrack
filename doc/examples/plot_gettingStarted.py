@@ -12,7 +12,7 @@ import os
 
 # %%
 # Get the path to the example GPX file
-example_file = os.path.join('..', '..', 'firstexample', 'activity_19218242997.gpx')
+example_file = os.path.join("..", "..", "firstexample", "activity_19218242997.gpx")
 
 # %%
 # Load the GPX track
@@ -54,7 +54,9 @@ print(f"    95% CI: [{lower:.2f}, {upper:.2f}] knots")
 
 # Simulate for best 10s segment
 start_idx, end_idx, _ = track.get_best_segment_for_time(10.0)
-mean_speed, lower, upper, _ = track.simulate_ar1_speeds((start_idx, end_idx))
+mean_speed, lower, upper, _ = track.simulate_ar1_speeds(
+    (start_idx, end_idx), sigma_tot=1.2, phi=0.9
+)
 print(f"  Best 10s segment (AR-1):")
 print(f"    Mean speed: {mean_speed:.2f} knots")
 print(f"    95% CI: [{lower:.2f}, {upper:.2f}] knots")
@@ -62,7 +64,9 @@ print(f"    95% CI: [{lower:.2f}, {upper:.2f}] knots")
 # %%
 # Generate stochastic process realizations for instantaneous speeds
 print("\nGenerating stochastic process realizations...")
-process_sample = track.processSample(sample_size=1000, method='ar1', sigma_tot=2.5, phi=0.9)
+process_sample = track.processSample(
+    sample_size=100, method="ar1", sigma_tot=1.2, phi=0.9
+)
 
 # %%
 # Plot instantaneous speeds with 95% confidence interval using OpenTURNS methods
@@ -82,26 +86,38 @@ for i, point in enumerate(track.points):
 # Use OpenTURNS computeQuantilePerComponent method directly on ProcessSample
 quantiles = process_sample.computeQuantilePerComponent([0.025, 0.975])
 # Extract quantile values - each quantile is a Sample in the ProcessSample
-quantile_025 = [quantiles[0][i][0] * 1.94384 for i in range(len(track.points))] # With conversion to knots
-quantile_975 = [quantiles[1][i][0] * 1.94384 for i in range(len(track.points))] # With conversion to knots
+quantile_025 = [
+    quantiles[0][i][0] * 1.94384 for i in range(len(track.points))
+]  # With conversion to knots
+quantile_975 = [
+    quantiles[1][i][0] * 1.94384 for i in range(len(track.points))
+]  # With conversion to knots
 
 # Plot observed speeds
-ax.plot(time_values, observed_speeds, 'b-', label='Observed Speed', linewidth=2)
+ax.plot(time_values, observed_speeds, "b-", label="Observed Speed", linewidth=2)
 
 # Plot confidence interval
-ax.fill_between(time_values, quantile_025, quantile_975, 
-                 alpha=0.3, color='blue', label='95% Confidence Interval')
+ax.fill_between(
+    time_values,
+    quantile_025,
+    quantile_975,
+    alpha=0.3,
+    color="blue",
+    label="95% Confidence Interval",
+)
 
 # Customize the plot
-ax.set_title('Instantaneous Speeds with 95% Confidence Interval (AR-1 Process)', fontsize=14)
-ax.set_xlabel('Time (seconds since epoch)', fontsize=12)
-ax.set_ylabel('Speed (knots)', fontsize=12)
+ax.set_title(
+    "Instantaneous Speeds with 95% Confidence Interval (AR-1 Process)", fontsize=14
+)
+ax.set_xlabel("Time (seconds since epoch)", fontsize=12)
+ax.set_ylabel("Speed (knots)", fontsize=12)
 ax.grid(True, alpha=0.3)
 ax.legend(fontsize=10)
 
 # Save the speed plot
-speed_plot_path = 'instantaneous_speeds_with_ci.png'
-fig.savefig(speed_plot_path, dpi=300, bbox_inches='tight')
+speed_plot_path = "instantaneous_speeds_with_ci.png"
+fig.savefig(speed_plot_path, dpi=300, bbox_inches="tight")
 print(f"Speed plot saved to: {speed_plot_path}")
 
 # %%
@@ -111,8 +127,8 @@ fig = track.plot_track(title="Example GPX Track", figsize=(12, 8), speed_unit="k
 
 # %%
 # Save the plot
-save_path = 'getting_started_plot.png'
-fig.savefig(save_path, dpi=300, bbox_inches='tight')
+save_path = "getting_started_plot.png"
+fig.savefig(save_path, dpi=300, bbox_inches="tight")
 print(f"Plot saved to: {save_path}")
 
 # %%
