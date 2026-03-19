@@ -151,15 +151,17 @@ class GpxTrack:
         """
         return self.data
 
-    def processSample(self, sample_size=1000, method="ar1", sigma_tot=2.5, phi=0.9):
+    def processSample(self, sample_size=1000, method="ar1", sigma_tot=2.5, phi=0.9, amplitude=1.0, scale=1.0):
         """
         Generate stochastic process realizations for instantaneous speeds.
 
         Args:
             sample_size (int): Number of realizations to generate (default: 1000).
-            method (str): Method for generating the process ('ar1' for AR-1 process).
+            method (str): Method for generating the process ('ar1' for AR-1 process, 'gaussian' for Gaussian process).
             sigma_tot (float): Total standard deviation for AR-1 process.
             phi (float): Autoregressive coefficient for AR-1 process.
+            amplitude (float): Amplitude parameter for Gaussian process covariance model.
+            scale (float): Scale/length of correlation parameter for Gaussian process covariance model.
 
         Returns:
             ot.ProcessSample: Stochastic process sample with realizations of instantaneous speeds.
@@ -230,9 +232,85 @@ class GpxTrack:
                 process_sample[sim_idx] = ot.Field(mesh, field_values)
 
             return process_sample
+        elif method == "gaussian":
+            # Generate Gaussian process realizations for speeds using position errors
+            # Convert latitude and longitude to meters for the reference point
+            ref_point = self.points[0]
+            lat_to_m = 111111.0
+            lon_to_m = 111111.0 * np.cos(np.radians(ref_point.latitude))
+
+            # Extract reference coordinates in meters
+            x_ref = [
+                (p.longitude - ref_point.longitude) * lon_to_m for p in self.points
+            ]
+            y_ref = [(p.latitude - ref_point.latitude) * lat_to_m for p in self.points]
+            t_ref = [(p.time - ref_point.time).total_seconds() for p in self.points]
+
+            # Create time mesh for the Gaussian process
+            time_values = []
+            for point in self.points:
+                time_value = point.time.timestamp() if point.time is not None else 0.0
+                time_values.append(time_value)
+            time_values = [t - time_values[0] for t in time_values]
+            mesh = ot.Mesh(ot.Sample.BuildFromPoint(time_values))
+
+            # Create covariance model for the Gaussian process
+            # Using AbsoluteExponential covariance model
+            # Parameters must be passed as lists
+            cov_model = ot.AbsoluteExponential([scale], [amplitude])
+
+            # Create Gaussian processes for X and Y errors
+            gaussian_process_x = ot.GaussianProcess(cov_model, mesh)
+            gaussian_process_y = ot.GaussianProcess(cov_model, mesh)
+
+            # Generate process realizations
+            process_realizations = ot.Sample(sample_size, len(self.points))
+
+            for sim_idx in range(sample_size):
+                # Generate Gaussian process errors for X and Y coordinates (in meters)
+                err_x_field = gaussian_process_x.getRealization()
+                err_y_field = gaussian_process_y.getRealization()
+                
+                # Convert fields to samples for easier access
+                err_x = ot.Sample(len(self.points), 1)
+                err_y = ot.Sample(len(self.points), 1)
+                for i in range(len(self.points)):
+                    err_x[i, 0] = err_x_field[i, 0]
+                    err_y[i, 0] = err_y_field[i, 0]
+
+                # Calculate noisy trajectory and compute instantaneous speeds
+                for i in range(len(self.points)):
+                    if i == 0:
+                        # First point has no speed
+                        simulated_speed = 0.0
+                    else:
+                        # Calculate distance between consecutive noisy points
+                        dx = (x_ref[i] + err_x[i][0]) - (x_ref[i - 1] + err_x[i - 1][0])
+                        dy = (y_ref[i] + err_y[i][0]) - (y_ref[i - 1] + err_y[i - 1][0])
+                        dt = t_ref[i] - t_ref[i - 1]
+                        if dt > 0:
+                            simulated_speed = np.sqrt(dx**2 + dy**2) / dt
+                        else:
+                            simulated_speed = 0.0
+                    process_realizations[sim_idx, i] = simulated_speed
+
+            # Create ProcessSample using the correct constructor
+            # ProcessSample(mesh, K, d) where K=number of fields, d=dimension
+            process_sample = ot.ProcessSample(mesh, sample_size, 1)
+
+            # Set the values for each field
+            for sim_idx in range(sample_size):
+                # Convert the Point to a Sample for the Field constructor
+                # The Sample should have dimension 1 and size equal to number of vertices
+                field_values = ot.Sample(len(self.points), 1)
+                for i in range(len(self.points)):
+                    field_values[i, 0] = process_realizations[sim_idx, i]
+                process_sample[sim_idx] = ot.Field(mesh, field_values)
+
+            return process_sample
         else:
             raise ValueError(
-                f"Unsupported method: {method}. Only 'ar1' is currently supported."
+                f"Unsupported method: {method}. Only 'ar1' and 'gaussian' are currently supported."
             )
 
     def simulate_ar1_speeds(self, segment_indices, sigma_tot=2.5, phi=0.9, n_sims=1000):

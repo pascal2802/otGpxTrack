@@ -120,7 +120,7 @@ def test_gpxtrack_process_sample():
     gpx_file = get_test_file_path("activity_19218242997.gpx")
     track = GpxTrack(gpx_file)
     
-    # Test with default parameters
+    # Test with default parameters (AR-1 method)
     process_sample = track.processSample(sample_size=100, method='ar1')
     
     # Verify the output is a ProcessSample
@@ -134,9 +134,19 @@ def test_gpxtrack_process_sample():
     time_grid = process_sample.getTimeGrid()
     assert time_grid.getN() == len(track.points)  # Should match number of track points
     
-    # Test with custom parameters
+    # Test with custom parameters for AR-1
     process_sample_custom = track.processSample(sample_size=50, method='ar1', sigma_tot=1.5, phi=0.7)
     assert process_sample_custom.getSize() == 50
+    
+    # Test Gaussian process method
+    process_sample_gaussian = track.processSample(sample_size=50, method='gaussian', amplitude=1.0, scale=1.0)
+    assert isinstance(process_sample_gaussian, ot.ProcessSample)
+    assert process_sample_gaussian.getSize() == 50
+    assert process_sample_gaussian.getDimension() == 1
+    
+    # Test with different Gaussian process parameters
+    process_sample_gaussian_custom = track.processSample(sample_size=30, method='gaussian', amplitude=0.5, scale=2.0)
+    assert process_sample_gaussian_custom.getSize() == 30
     
     # Test error handling for unsupported method
     with pytest.raises(ValueError):

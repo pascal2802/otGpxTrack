@@ -41,7 +41,19 @@ Created a Python library for statistical analysis of GPX tracks using OpenTURNS,
   - Returns OpenTURNS Sample of all simulated speeds
   - Uses OpenTURNS for all statistical calculations
 
-### 4. Best Segment Analysis
+### 4. Gaussian Process Simulation
+**New Feature**
+
+- Enhanced `processSample()` method to support Gaussian process generation
+- Uses `ot.GaussianProcess` with `ot.AbsoluteExponential` covariance model
+- Generates correlated errors on X and Y coordinates (similar to AR-1 approach)
+- Calculates instantaneous speeds from noisy trajectories
+- Hyperparameters:
+  - `amplitude`: Controls variance (recommended 1.5m for 95% errors ≤ 3m)
+  - `scale`: Controls temporal correlation length (recommended 5.0s for 1Hz GPS)
+- Both AR-1 and Gaussian process methods now follow the same workflow
+
+### 5. Best Segment Analysis
 - `_find_best_segment()`: Generic method for finding optimal track segments
 - `get_best_segment_for_distance()`: Finds best segment for target distance
 - `get_best_segment_for_time()`: Finds best segment for target time duration
@@ -147,7 +159,7 @@ Committed changes in logical increments:
 
 Potential future enhancements:
 - Add visualization capabilities using matplotlib ✓ (Completed)
-- Implement more sophisticated statistical models
+- Implement more sophisticated statistical models ✓ (Completed - Gaussian Process)
 - Add support for multiple track segments
 - Implement caching for expensive operations
 - Add more comprehensive error handling
@@ -165,6 +177,7 @@ Potential future enhancements:
 ### Documentation
 - Created Sphinx documentation structure
 - Added getting started example with AR-1 simulation
+- Added Gaussian process comparison example
 - Configured Sphinx-Gallery for automatic example generation
 - Successfully built HTML documentation
 - Added theory pages explaining statistical methods
@@ -174,6 +187,13 @@ Potential future enhancements:
 - Configured automatic deployment to GitHub Pages
 - Set up artifact sharing between jobs
 - Implemented proper token authentication for deployment
+
+### Gaussian Process Implementation
+- Enhanced `processSample()` method with Gaussian process support
+- Created comprehensive comparison example (plot_modelErrorWithGP.py)
+- Optimized parameters for GPS data (amplitude=1.5m, scale=5.0s)
+- Both AR-1 and Gaussian process methods follow the same workflow
+- Updated README with Gaussian process examples
 
 ## Documentation Build
 

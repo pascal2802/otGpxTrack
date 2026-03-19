@@ -8,6 +8,7 @@ A Python library for statistical analysis of GPX tracks using OpenTURNS.
 - Calculate basic track statistics (distance, duration, average speed)
 - Generate OpenTURNS samples from track data
 - AR-1 process simulation for speed analysis
+- Gaussian process simulation for speed analysis
 - Find best segments for distance or time targets
 
 ## Installation
@@ -65,14 +66,20 @@ print(f"95% CI: [{lower:.2f}, {upper:.2f}]")
 
 ```python
 # Generate stochastic process realizations for instantaneous speeds
-process_sample = track.processSample(sample_size=1000, method='ar1')
+# Using AR-1 process
+process_sample_ar1 = track.processSample(sample_size=1000, method='ar1', sigma_tot=2.5, phi=0.9)
 
-print(f"Process sample size: {process_sample.getSize()}")
-print(f"Process dimension: {process_sample.getDimension()}")
-print(f"Time grid vertices: {process_sample.getMesh().getVerticesNumber()}")
+# Using Gaussian process (recommended for GPS data)
+# amplitude=1.5m ensures 95% of errors ≤ 3m radius
+# scale=5.0s appropriate for 1Hz GPS data
+process_sample_gp = track.processSample(sample_size=1000, method='gaussian', amplitude=1.5, scale=5.0)
+
+print(f"Process sample size: {process_sample_gp.getSize()}")
+print(f"Process dimension: {process_sample_gp.getDimension()}")
+print(f"Time grid vertices: {process_sample_gp.getMesh().getVerticesNumber()}")
 
 # Compute quantiles for confidence intervals
-quantiles = process_sample.computeQuantilePerComponent([0.025, 0.975])
+quantiles = process_sample_gp.computeQuantilePerComponent([0.025, 0.975])
 print(f"95% CI at first point: [{quantiles[0][0][0]:.2f}, {quantiles[1][0][0]:.2f}] knots")
 ```
 
