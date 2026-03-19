@@ -138,6 +138,10 @@ Committed changes in logical increments:
 2. Added instantaneous speed calculation and OpenTURNS sample description
 3. Added AR-1 simulation with OpenTURNS objects and best segment methods
 4. Added comprehensive README documentation
+5. Added theory pages to documentation
+6. Fixed typo in theory documentation
+7. Added processSample to gather generated trajectories for velocity measured from position
+8. Adjusted sigma value in getting started example
 
 ## Next Steps
 
@@ -148,6 +152,7 @@ Potential future enhancements:
 - Implement caching for expensive operations
 - Add more comprehensive error handling
 - Create CLI interface for common operations
+- Add processSample functionality for gathering generated trajectories ✓ (Completed)
 
 ## Completed Enhancements
 
@@ -162,6 +167,7 @@ Potential future enhancements:
 - Added getting started example with AR-1 simulation
 - Configured Sphinx-Gallery for automatic example generation
 - Successfully built HTML documentation
+- Added theory pages explaining statistical methods
 
 ### CI/CD Pipeline
 - Created GitHub Actions workflow for testing and documentation
