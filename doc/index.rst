@@ -24,6 +24,7 @@ Theory
    :maxdepth: 1
 
    theory.rst
+   gaussian_process.rst
 
 
 Indices and tables
