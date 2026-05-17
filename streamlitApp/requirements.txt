@@ -1,0 +1,15 @@
+# Streamlit App Requirements
+# This file contains dependencies specific to the Streamlit application
+
+# Core dependencies
+streamlit>=1.29.0
+reportlab>=4.0.0
+
+# For PDF generation fallback
+matplotlib>=3.10.8
+
+# Parent project dependencies (also needed)
+gpxpy>=1.6.2
+numpy>=2.2.6
+openturns>=1.26
+pandas>=2.3.3
