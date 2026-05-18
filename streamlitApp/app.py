@@ -89,13 +89,15 @@ def main():
                 with cols[i]:
                     if (example_dir / example_file).exists():
                         if st.button(f"Load {example_file}", use_container_width=True):
+                            # Create a temporary file with the example content
                             with open(example_dir / example_file, "rb") as f:
-                                uploaded_file = f.read()
-                                uploaded_file = tempfile.NamedTemporaryFile(
-                                    delete=False, suffix=".gpx"
-                                )
-                                uploaded_file.write(uploaded_file)
-                                uploaded_file.seek(0)
+                                file_content = f.read()
+                            temp_file = tempfile.NamedTemporaryFile(
+                                delete=False, suffix=".gpx", mode='wb'
+                            )
+                            temp_file.write(file_content)
+                            temp_file.close()
+                            uploaded_file = temp_file
     
     if uploaded_file is not None:
         # Process the uploaded file
@@ -103,14 +105,16 @@ def main():
             with st.spinner("Processing GPX file..."):
                 # Save to temp file
                 if hasattr(uploaded_file, "name"):
+                    # This is a temp file from example loading
                     temp_file_path = uploaded_file.name
                 else:
+                    # This is a Streamlit UploadedFile
                     temp_file = tempfile.NamedTemporaryFile(
-                        delete=False, suffix=".gpx"
+                        delete=False, suffix=".gpx", mode='wb'
                     )
                     temp_file.write(uploaded_file.getvalue())
-                    temp_file_path = temp_file.name
                     temp_file.close()
+                    temp_file_path = temp_file.name
 
                 # Load the track
                 track = GpxTrack(temp_file_path)

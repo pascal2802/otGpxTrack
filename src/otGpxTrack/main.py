@@ -25,7 +25,7 @@ class GpxTrack:
 
     def _load_gpx(self):
         """Load and parse the GPX file."""
-        with open(self.gpx_file_path, "r") as f:
+        with open(self.gpx_file_path, "rb") as f:
             self.gpx = gpxpy.parse(f)
 
     def _extract_points(self):

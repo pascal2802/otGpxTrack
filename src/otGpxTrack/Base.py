@@ -60,7 +60,7 @@ class GpxTrack:
 
     def _load_gpx(self):
         """Load and parse the GPX file."""
-        with open(self.gpx_file_path, "r") as f:
+        with open(self.gpx_file_path, "rb") as f:
             self.gpx = gpxpy.parse(f)
 
     def _extract_points(self):
@@ -378,8 +378,8 @@ class GpxTrack:
 
         # Calculate statistics using OpenTURNS
         mean_speed = v_simulees.computeMean()[0]
-        lower = ot.Sample.computeQuantilePerComponent(v_simulees, 0.025)[0]
-        upper = ot.Sample.computeQuantilePerComponent(v_simulees, 0.975)[0]
+        lower = ot.Sample.computeQuantilePerComponent(v_simulees, 0.025)[0][0]
+        upper = ot.Sample.computeQuantilePerComponent(v_simulees, 0.975)[0][0]
 
         return mean_speed, lower, upper, v_simulees
 

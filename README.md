@@ -140,3 +140,4 @@ Contributions are welcome! Please open an issue or submit a pull request.
 - Inspired by the firstexample/gpxAnalyse.py script
 - Uses OpenTURNS for statistical analysis
 - Built with modern Python tooling (uv, pytest)
+# Test CI
