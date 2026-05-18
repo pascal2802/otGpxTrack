@@ -17,16 +17,18 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.11"
+        python-version: "3.10"
     
     - name: Install uv
       run: pip install uv
     
     - name: Install dependencies
-      run: uv sync
+      run: |
+        uv pip install gpxpy matplotlib numpy pandas
+        uv pip install --extra-index-url https://pypi.fury.io/openturns/ openturns
     
     - name: Run tests
-      run: uv run pytest test/ -v
+      run: python -m pytest test/ -v
 
   build-docs:
     name: Build Documentation
